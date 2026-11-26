@@ -1,0 +1,51 @@
+<resources>
+    <string name="app_name">WelliAI</string>
+    <string name="app_subtitle">Tu Asistente de Cocina Inteligente</string>
+    <string name="app_slogan">Haz de tu alimento tu medicina, sin perder tiempo en la cocina</string>
+
+    <!-- Login Screen -->
+    <string name="login_title">Iniciar sesión</string>
+    <string name="email_label">Correo electrónico</string>
+    <string name="email_hint">ejemplo@correo.com</string>
+    <string name="password_label">Contraseña</string>
+    <string name="btn_login">Iniciar sesión</string>
+    <string name="btn_create_account">Crear cuenta</string>
+    <string name="error_empty_fields">Por favor, completa todos los campos.</string>
+    <string name="error_invalid_email">Ingresa un correo electrónico válido.</string>
+    <string name="show_password">Mostrar contraseña</string>
+    <string name="hide_password">Ocultar contraseña</string>
+
+    <!-- Home Screen -->
+    <string name="greeting_user">¡Hola, %1$s! 👋</string>
+    <string name="home_question">¿Qué vamos a cocinar hoy?</string>
+    <string name="card_generate_title">Genera recetas inteligentes</string>
+    <string name="card_generate_desc">Descubre deliciosas recetas con los ingredientes que tienes en casa</string>
+    <string name="btn_create_recipe">Crear receta</string>
+    <string name="inventory_title">Tu inventario</string>
+    <string name="btn_see_all">Ver todo</string>
+    <string name="budget_title">Modo de presupuesto</string>
+    <string name="budget_free">Gratis</string>
+    <string name="budget_savings">Ahorro</string>
+    <string name="budget_gourmet">Gourmet</string>
+    <string name="recent_recipes_title">Recetas recientes</string>
+    <string name="recipe_sample_name">Tortilla Española Inteligente</string>
+    <string name="recipe_sample_time">20 min</string>
+    <string name="recipe_sample_cost">$45 MXN</string>
+    <string name="notifications">Notificaciones</string>
+
+    <!-- Navigation -->
+    <string name="nav_home">Inicio</string>
+    <string name="nav_inventory">Inventario</string>
+    <string name="nav_favorites">Favoritos</string>
+    <string name="nav_profile">Perfil</string>
+
+    <!-- Demo Items -->
+    <string name="ingredient_tomato">Tomate</string>
+    <string name="ingredient_egg">Huevo</string>
+    <string name="ingredient_cheese">Queso</string>
+    <string name="ingredient_onion">Cebolla</string>
+    <string name="qty_tomato">4 uds</string>
+    <string name="qty_egg">6 uds</string>
+    <string name="qty_cheese">250g</string>
+    <string name="qty_onion">2 uds</string>
+</resources>
