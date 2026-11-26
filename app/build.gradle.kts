@@ -5,6 +5,14 @@ plugins {
     alias(libs.plugins.hilt.android)
 }
 
+val productionBackendUrl = providers.gradleProperty("welliaiBackendUrl")
+    .orElse(providers.environmentVariable("WELLIAI_BACKEND_URL"))
+    .getOrElse("")
+require(productionBackendUrl.isBlank() || productionBackendUrl.startsWith("https://")) {
+    "welliaiBackendUrl must use HTTPS for release builds."
+}
+val escapedProductionBackendUrl = productionBackendUrl.replace("\\", "\\\\").replace("\"", "\\\"")
+
 android {
     namespace = "com.npcg.practica1"
     compileSdk {
@@ -23,19 +31,24 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
-    buildTypes {
-        release {
-            optimization {
-                enable = false
-            }
-        }
-    }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
     buildFeatures {
         compose = true
+        buildConfig = true
+    }
+    buildTypes {
+        debug {
+            buildConfigField("String", "AI_BACKEND_BASE_URL", "\"http://10.0.2.2:8080/\"")
+        }
+        release {
+            optimization {
+                enable = false
+            }
+            buildConfigField("String", "AI_BACKEND_BASE_URL", "\"$escapedProductionBackendUrl\"")
+        }
     }
 }
 
@@ -51,6 +64,9 @@ dependencies {
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.androidx.datastore.preferences)
+    implementation(libs.square.retrofit)
+    implementation(libs.square.retrofit.converter.gson)
+    implementation(libs.square.okhttp)
 
     // Room Runtime & KTX
     implementation(libs.androidx.room.runtime)

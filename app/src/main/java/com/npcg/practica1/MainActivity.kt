@@ -27,13 +27,15 @@ import com.npcg.practica1.ui.screens.auth.AuthError
 import com.npcg.practica1.ui.screens.auth.AuthViewModel
 import com.npcg.practica1.ui.screens.auth.LoginScreen
 import com.npcg.practica1.ui.screens.auth.RegisterScreen
+import com.npcg.practica1.ui.screens.ai.RecipeGeneratorScreen
+import com.npcg.practica1.ui.screens.ai.WelliChatScreen
 import com.npcg.practica1.ui.screens.home.HomeScreen
 import com.npcg.practica1.ui.screens.inventory.InventarioScreen
 import com.npcg.practica1.ui.screens.preferences.PreferenciasScreen
 import com.npcg.practica1.ui.theme.WelliTheme
 import dagger.hilt.android.AndroidEntryPoint
 
-private enum class AppDestination { HOME, INVENTORY, PREFERENCES }
+private enum class AppDestination { HOME, INVENTORY, PREFERENCES, RECIPE_GENERATOR, AI_CHAT }
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -52,7 +54,11 @@ class MainActivity : ComponentActivity() {
             BackHandler(
                 enabled = authState is AuthUiState.SignedIn && destination != AppDestination.HOME
             ) {
-                destination = AppDestination.HOME
+                destination = if (destination == AppDestination.AI_CHAT) {
+                    AppDestination.RECIPE_GENERATOR
+                } else {
+                    AppDestination.HOME
+                }
             }
 
             BackHandler(
@@ -96,9 +102,7 @@ class MainActivity : ComponentActivity() {
                         when (destination) {
                             AppDestination.HOME -> HomeScreen(
                                 userName = state.user.nombre,
-                                onCreateRecipeClick = {
-                                    Toast.makeText(this, "Generador IA de recetas activado", Toast.LENGTH_SHORT).show()
-                                },
+                                onCreateRecipeClick = { destination = AppDestination.RECIPE_GENERATOR },
                                 onInventoryClick = { destination = AppDestination.INVENTORY },
                                 onFavoritesClick = {
                                     Toast.makeText(this, "Accediendo a recetas favoritas", Toast.LENGTH_SHORT).show()
@@ -108,6 +112,13 @@ class MainActivity : ComponentActivity() {
                             )
                             AppDestination.INVENTORY -> InventarioScreen(onBack = { destination = AppDestination.HOME })
                             AppDestination.PREFERENCES -> PreferenciasScreen(onBack = { destination = AppDestination.HOME })
+                            AppDestination.RECIPE_GENERATOR -> RecipeGeneratorScreen(
+                                onBack = { destination = AppDestination.HOME },
+                                onChatClick = { destination = AppDestination.AI_CHAT }
+                            )
+                            AppDestination.AI_CHAT -> WelliChatScreen(
+                                onBack = { destination = AppDestination.RECIPE_GENERATOR }
+                            )
                         }
                     }
                     is AuthUiState.Error -> {
