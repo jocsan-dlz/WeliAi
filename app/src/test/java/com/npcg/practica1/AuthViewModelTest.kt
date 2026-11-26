@@ -159,6 +159,8 @@ private class InMemorySessionStore(
 
     override suspend fun getUserId(): Int? = userId
 
+    override fun observeUserId(): Flow<Int?> = flowOf(userId)
+
     override suspend fun clear() {
         userId = null
     }
@@ -179,11 +181,13 @@ private class SessionTestUsuarioDao(
 private object FailingSessionStore : SessionStore {
     override suspend fun saveUserId(userId: Int) = error("Session storage failed")
     override suspend fun getUserId(): Int? = error("Session storage failed")
+    override fun observeUserId(): Flow<Int?> = flowOf(null)
     override suspend fun clear() = error("Session storage failed")
 }
 
 private object FailingLogoutStore : SessionStore {
     override suspend fun saveUserId(userId: Int) = Unit
     override suspend fun getUserId(): Int? = 1
+    override fun observeUserId(): Flow<Int?> = flowOf(1)
     override suspend fun clear() = error("Session storage failed")
 }

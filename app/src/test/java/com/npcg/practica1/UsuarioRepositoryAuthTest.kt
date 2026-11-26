@@ -106,6 +106,7 @@ class UsuarioRepositoryAuthTest {
     private object NoOpSessionStore : SessionStore {
         override suspend fun saveUserId(userId: Int) = Unit
         override suspend fun getUserId(): Int? = null
+        override fun observeUserId(): Flow<Int?> = flowOf(null)
         override suspend fun clear() = Unit
     }
 

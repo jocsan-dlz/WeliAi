@@ -13,6 +13,8 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -36,6 +38,8 @@ fun HomeScreen(
     viewModel: HomeViewModel = hiltViewModel()
 ) {
     val scrollState = rememberScrollState()
+    val inventoryItems by viewModel.inventoryItems.collectAsState()
+    val inventoryError by viewModel.inventoryError.collectAsState()
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
@@ -170,10 +174,22 @@ fun HomeScreen(
                     }
                 }
 
-                LazyRow(
+                if (inventoryError != null) {
+                    Text(
+                        text = inventoryError.orEmpty(),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.error
+                    )
+                } else if (inventoryItems.isEmpty()) {
+                    Text(
+                        text = "Tu inventario está vacío.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                } else LazyRow(
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    items(viewModel.inventoryItems) { item ->
+                    items(inventoryItems, key = { it.id }) { item ->
                         Card(
                             shape = MaterialTheme.shapes.medium,
                             colors = CardDefaults.cardColors(
@@ -201,13 +217,13 @@ fun HomeScreen(
                                     )
                                 }
                                 Text(
-                                    text = stringResource(id = item.nameRes),
+                                    text = item.nombre,
                                     style = MaterialTheme.typography.bodyMedium,
                                     fontWeight = FontWeight.Medium,
                                     color = MaterialTheme.colorScheme.onSurface
                                 )
                                 Text(
-                                    text = stringResource(id = item.qtyRes),
+                                    text = "${item.cantidad} ${item.unidad}",
                                     style = MaterialTheme.typography.labelLarge,
                                     color = MaterialTheme.colorScheme.primary
                                 )

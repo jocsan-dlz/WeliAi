@@ -5,6 +5,8 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 
 class DataStoreSessionStore @Inject constructor(
@@ -15,8 +17,10 @@ class DataStoreSessionStore @Inject constructor(
         dataStore.edit { preferences -> preferences[USER_ID_KEY] = userId }
     }
 
-    override suspend fun getUserId(): Int? =
-        dataStore.data.first()[USER_ID_KEY]
+    override suspend fun getUserId(): Int? = observeUserId().first()
+
+    override fun observeUserId(): Flow<Int?> =
+        dataStore.data.map { preferences -> preferences[USER_ID_KEY] }
 
     override suspend fun clear() {
         dataStore.edit { preferences -> preferences.remove(USER_ID_KEY) }

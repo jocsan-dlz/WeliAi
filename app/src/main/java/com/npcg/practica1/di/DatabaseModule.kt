@@ -4,6 +4,8 @@ import android.content.Context
 import androidx.room.Room
 import com.npcg.practica1.data.local.WelliDatabase
 import com.npcg.practica1.data.local.dao.IngredienteDao
+import com.npcg.practica1.data.local.dao.InventarioDao
+import com.npcg.practica1.data.local.dao.PreferenciasAlimentariasDao
 import com.npcg.practica1.data.local.dao.RecetaDao
 import com.npcg.practica1.data.local.dao.RecetaIngredienteDao
 import com.npcg.practica1.data.local.dao.UsuarioDao
@@ -22,7 +24,9 @@ object DatabaseModule {
     @Provides
     @Singleton
     fun provideWelliDatabase(@ApplicationContext context: Context): WelliDatabase =
-        Room.databaseBuilder(context, WelliDatabase::class.java, DATABASE_NAME).build()
+        Room.databaseBuilder(context, WelliDatabase::class.java, DATABASE_NAME)
+            .addMigrations(WelliDatabase.MIGRATION_1_2)
+            .build()
 
     @Provides
     @Singleton
@@ -40,4 +44,13 @@ object DatabaseModule {
     @Singleton
     fun provideRecetaIngredienteDao(database: WelliDatabase): RecetaIngredienteDao =
         database.recetaIngredienteDao()
+
+    @Provides
+    @Singleton
+    fun provideInventarioDao(database: WelliDatabase): InventarioDao = database.inventarioDao()
+
+    @Provides
+    @Singleton
+    fun providePreferenciasAlimentariasDao(database: WelliDatabase): PreferenciasAlimentariasDao =
+        database.preferenciasAlimentariasDao()
 }
