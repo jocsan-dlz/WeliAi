@@ -8,6 +8,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material3.*
@@ -25,10 +26,12 @@ import com.npcg.practica1.ui.components.WelliButton
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
+    userName: String,
     onCreateRecipeClick: () -> Unit,
     onInventoryClick: () -> Unit,
     onFavoritesClick: () -> Unit,
     onProfileClick: () -> Unit,
+    onLogout: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: HomeViewModel = hiltViewModel()
 ) {
@@ -67,7 +70,7 @@ fun HomeScreen(
             ) {
                 Column {
                     Text(
-                        text = stringResource(id = R.string.greeting_user, viewModel.userName),
+                        text = stringResource(id = R.string.greeting_user, userName),
                         style = MaterialTheme.typography.headlineMedium,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onBackground
@@ -79,18 +82,26 @@ fun HomeScreen(
                     )
                 }
 
-                // Notificaciones
-                IconButton(
-                    onClick = { },
-                    modifier = Modifier
-                        .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.surfaceVariant)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Notifications,
-                        contentDescription = stringResource(id = R.string.notifications),
-                        tint = MaterialTheme.colorScheme.primary
-                    )
+                Row {
+                    IconButton(
+                        onClick = { },
+                        modifier = Modifier
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.surfaceVariant)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Notifications,
+                            contentDescription = stringResource(id = R.string.notifications),
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                    IconButton(onClick = onLogout) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.Logout,
+                            contentDescription = stringResource(id = R.string.btn_logout),
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    }
                 }
             }
 

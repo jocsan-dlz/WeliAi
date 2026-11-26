@@ -6,15 +6,21 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.npcg.practica1.R
+import com.npcg.practica1.domain.model.AccountDisabledException
+import com.npcg.practica1.domain.model.InvalidCredentialsException
+import com.npcg.practica1.domain.repository.SessionStore
 import com.npcg.practica1.domain.repository.UsuarioRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 @HiltViewModel
 class LoginViewModel @Inject constructor(
-    private val usuarioRepository: UsuarioRepository
+    private val usuarioRepository: UsuarioRepository,
+    private val sessionStore: SessionStore
 ) : ViewModel() {
     var email by mutableStateOf("")
         private set
@@ -23,6 +29,8 @@ class LoginViewModel @Inject constructor(
     var isPasswordVisible by mutableStateOf(false)
         private set
     var errorMessageResId by mutableStateOf<Int?>(null)
+        private set
+    var isLoading by mutableStateOf(false)
         private set
 
     fun onEmailChange(newEmail: String) {
@@ -40,27 +48,42 @@ class LoginViewModel @Inject constructor(
     }
 
     fun validateAndLogin(onSuccess: () -> Unit) {
+        if (isLoading) return
         when {
             email.isBlank() || password.isBlank() -> errorMessageResId = R.string.error_empty_fields
-            !android.util.Patterns.EMAIL_ADDRESS.matcher(email.trim()).matches() ->
+            !EMAIL_PATTERN.matches(email.trim()) ->
                 errorMessageResId = R.string.error_invalid_email
-            else -> viewModelScope.launch {
-                val result = try {
-                    usuarioRepository.iniciarSesion(email.trim(), password)
-                } catch (e: CancellationException) {
-                    throw e
-                } catch (e: Exception) {
-                    Result.failure(e)
-                }
-                result.fold(
-                    onSuccess = {
+            else -> {
+                isLoading = true
+                viewModelScope.launch {
+                    try {
+                        val result = withContext(Dispatchers.IO) {
+                            usuarioRepository.iniciarSesion(email.trim(), password)
+                        }
+                        val user = result.getOrElse { throw it }
+                        withContext(Dispatchers.IO) {
+                            sessionStore.saveUserId(user.idUsuario)
+                        }
                         password = ""
                         errorMessageResId = null
                         onSuccess()
-                    },
-                    onFailure = { errorMessageResId = R.string.error_auth_failed }
-                )
+                    } catch (e: CancellationException) {
+                        throw e
+                    } catch (e: InvalidCredentialsException) {
+                        errorMessageResId = R.string.error_invalid_credentials
+                    } catch (e: AccountDisabledException) {
+                        errorMessageResId = R.string.error_account_disabled
+                    } catch (e: Exception) {
+                        errorMessageResId = R.string.error_database
+                    } finally {
+                        isLoading = false
+                    }
+                }
             }
         }
+    }
+
+    private companion object {
+        val EMAIL_PATTERN = Regex("^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$")
     }
 }

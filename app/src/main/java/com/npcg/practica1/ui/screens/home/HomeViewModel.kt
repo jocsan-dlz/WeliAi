@@ -24,9 +24,6 @@ data class IngredientItem(
 @HiltViewModel
 class HomeViewModel @Inject constructor() : ViewModel() {
 
-    var userName by mutableStateOf("Jodiluz")
-        private set
-
     var selectedBudget by mutableStateOf(BudgetOption.GRATIS)
         private set
 

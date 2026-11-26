@@ -10,9 +10,27 @@
     <string name="password_label">Contraseña</string>
     <string name="btn_login">Iniciar sesión</string>
     <string name="btn_create_account">Crear cuenta</string>
+    <string name="register_title">Crear una cuenta</string>
+    <string name="name_label">Nombre</string>
+    <string name="confirm_password_label">Confirmar contraseña</string>
+    <string name="password_policy">Usa al menos 8 caracteres, con letras y números.</string>
+    <string name="btn_register">Registrarme</string>
+    <string name="btn_back_to_login">Ya tengo una cuenta</string>
+    <string name="btn_logout">Cerrar sesión</string>
+    <string name="btn_retry">Reintentar</string>
+    <string name="registration_success">Cuenta creada. Inicia sesión para continuar.</string>
     <string name="error_empty_fields">Por favor, completa todos los campos.</string>
     <string name="error_auth_failed">No se pudo iniciar sesión. Verifica tus datos o restablece tu contraseña.</string>
     <string name="error_invalid_email">Ingresa un correo electrónico válido.</string>
+    <string name="error_invalid_credentials">Correo o contraseña incorrectos.</string>
+    <string name="error_account_disabled">Esta cuenta está deshabilitada.</string>
+    <string name="error_database">No se pudo completar la operación. Inténtalo de nuevo.</string>
+    <string name="error_email_registered">Este correo ya está registrado.</string>
+    <string name="error_weak_password">La contraseña debe tener al menos 8 caracteres, con letras y números.</string>
+    <string name="error_password_mismatch">Las contraseñas no coinciden.</string>
+    <string name="error_invalid_registration">Revisa los datos ingresados.</string>
+    <string name="error_session">No se pudo validar la sesión. Inténtalo otra vez.</string>
+    <string name="error_logout">No se pudo cerrar la sesión. Inténtalo otra vez.</string>
     <string name="show_password">Mostrar contraseña</string>
     <string name="hide_password">Ocultar contraseña</string>
 

@@ -2,6 +2,7 @@ package com.npcg.practica1.ui.components
 
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.size
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -13,7 +14,8 @@ fun WelliButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
-    isSecondary: Boolean = false
+    isSecondary: Boolean = false,
+    isLoading: Boolean = false
 ) {
     if (isSecondary) {
         OutlinedButton(
@@ -21,10 +23,10 @@ fun WelliButton(
             modifier = modifier
                 .fillMaxWidth()
                 .height(50.dp),
-            enabled = enabled,
+            enabled = enabled && !isLoading,
             shape = MaterialTheme.shapes.medium
         ) {
-            Text(text = text, style = MaterialTheme.typography.labelLarge)
+            ButtonContent(text, isLoading)
         }
     } else {
         Button(
@@ -32,14 +34,26 @@ fun WelliButton(
             modifier = modifier
                 .fillMaxWidth()
                 .height(50.dp),
-            enabled = enabled,
+            enabled = enabled && !isLoading,
             shape = MaterialTheme.shapes.medium,
             colors = ButtonDefaults.buttonColors(
                 containerColor = MaterialTheme.colorScheme.primary,
                 contentColor = MaterialTheme.colorScheme.onPrimary
             )
         ) {
-            Text(text = text, style = MaterialTheme.typography.labelLarge)
+            ButtonContent(text, isLoading)
         }
+    }
+}
+
+@Composable
+private fun ButtonContent(text: String, isLoading: Boolean) {
+    if (isLoading) {
+        CircularProgressIndicator(
+            modifier = Modifier.size(18.dp),
+            strokeWidth = 2.dp
+        )
+    } else {
+        Text(text = text, style = MaterialTheme.typography.labelLarge)
     }
 }

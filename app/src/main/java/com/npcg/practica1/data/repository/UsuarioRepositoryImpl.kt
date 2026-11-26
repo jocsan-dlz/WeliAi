@@ -3,13 +3,19 @@ package com.npcg.practica1.data.repository
 import com.npcg.practica1.data.local.dao.UsuarioDao
 import com.npcg.practica1.data.mapper.toDomain
 import com.npcg.practica1.data.mapper.toEntity
+import com.npcg.practica1.domain.model.AccountDisabledException
+import com.npcg.practica1.domain.model.EmailAlreadyRegisteredException
+import com.npcg.practica1.domain.model.InvalidCredentialsException
+import com.npcg.practica1.domain.model.PasswordPolicy
 import com.npcg.practica1.domain.model.Usuario
+import com.npcg.practica1.domain.model.WeakPasswordException
 import com.npcg.practica1.domain.repository.UsuarioRepository
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import java.security.MessageDigest
 import java.security.SecureRandom
+import java.util.Locale
 import javax.crypto.SecretKeyFactory
 import javax.crypto.spec.PBEKeySpec
 import javax.inject.Inject
@@ -21,14 +27,19 @@ class UsuarioRepositoryImpl @Inject constructor(
 
     override suspend fun registrarUsuario(usuario: Usuario, contrasenaPlana: String): Result<Usuario> {
         return try {
-            require(contrasenaPlana.length >= MIN_PASSWORD_LENGTH) {
-                "La contraseña debe tener al menos $MIN_PASSWORD_LENGTH caracteres"
+            val email = usuario.correo.trim().lowercase(Locale.ROOT)
+            require(usuario.nombre.isNotBlank() && email.isNotBlank()) {
+                "El nombre y el correo son obligatorios"
             }
-            if (usuarioDao.getUsuarioByCorreo(usuario.correo.trim()) != null) {
-                return Result.failure(IllegalArgumentException("El correo electrónico ya está registrado"))
+            require(EMAIL_PATTERN.matches(email)) { "El correo electrónico no es válido" }
+            if (!PasswordPolicy.isStrong(contrasenaPlana)) {
+                return Result.failure(WeakPasswordException())
+            }
+            if (usuarioDao.getUsuarioByCorreo(email) != null) {
+                return Result.failure(EmailAlreadyRegisteredException())
             }
             val hashed = hashPassword(contrasenaPlana)
-            val id = usuarioDao.insertUsuario(usuario.copy(correo = usuario.correo.trim()).toEntity(hashed))
+            val id = usuarioDao.insertUsuario(usuario.copy(correo = email).toEntity(hashed))
             val created = usuarioDao.getUsuarioById(id.toInt())
                 ?: return Result.failure(IllegalStateException("No se pudo consultar el usuario creado"))
             Result.success(created.toDomain())
@@ -42,9 +53,12 @@ class UsuarioRepositoryImpl @Inject constructor(
     override suspend fun iniciarSesion(correo: String, contrasenaPlana: String): Result<Usuario> {
         return try {
             val entity = usuarioDao.getUsuarioByCorreo(correo.trim())
-                ?: return Result.failure(IllegalArgumentException("Usuario o contraseña incorrectos"))
-            if (!entity.estado || !verifyPassword(contrasenaPlana, entity.contrasena_hash)) {
-                return Result.failure(IllegalArgumentException("Usuario o contraseña incorrectos"))
+                ?: return Result.failure(InvalidCredentialsException())
+            if (!entity.estado) {
+                return Result.failure(AccountDisabledException())
+            }
+            if (!verifyPassword(contrasenaPlana, entity.contrasena_hash)) {
+                return Result.failure(InvalidCredentialsException())
             }
             Result.success(entity.toDomain())
         } catch (e: CancellationException) {
@@ -79,10 +93,8 @@ class UsuarioRepositoryImpl @Inject constructor(
                 ?: return Result.failure(NoSuchElementException("El usuario no existe"))
             val hash = when {
                 nuevaContrasenaPlana == null -> current.contrasena_hash
-                nuevaContrasenaPlana.length >= MIN_PASSWORD_LENGTH -> hashPassword(nuevaContrasenaPlana)
-                else -> return Result.failure(IllegalArgumentException(
-                    "La contraseña debe tener al menos $MIN_PASSWORD_LENGTH caracteres"
-                ))
+                PasswordPolicy.isStrong(nuevaContrasenaPlana) -> hashPassword(nuevaContrasenaPlana)
+                else -> return Result.failure(WeakPasswordException())
             }
             if (usuarioDao.updateUsuario(usuario.toEntity(hash)) == 0) {
                 return Result.failure(NoSuchElementException("El usuario no existe"))
@@ -118,7 +130,7 @@ class UsuarioRepositoryImpl @Inject constructor(
         private const val KEY_LENGTH_BITS = 256
         private const val HASH_SIZE_BYTES = KEY_LENGTH_BITS / 8
         private const val SALT_SIZE_BYTES = 16
-        private const val MIN_PASSWORD_LENGTH = 8
+        private val EMAIL_PATTERN = Regex("^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$")
         private val HEX_PATTERN = Regex("^[0-9a-fA-F]+$")
 
         internal fun hashPassword(password: String): String {

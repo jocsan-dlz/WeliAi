@@ -159,14 +159,17 @@ fun LoginScreen(
                         text = stringResource(id = R.string.btn_login),
                         onClick = {
                             viewModel.validateAndLogin(onSuccess = onLoginSuccess)
-                        }
+                        },
+                        enabled = !viewModel.isLoading,
+                        isLoading = viewModel.isLoading
                     )
 
                     // Botón Secundario: Crear Cuenta
                     WelliButton(
                         text = stringResource(id = R.string.btn_create_account),
                         onClick = onCreateAccountClick,
-                        isSecondary = true
+                        isSecondary = true,
+                        enabled = !viewModel.isLoading
                     )
                 }
             }

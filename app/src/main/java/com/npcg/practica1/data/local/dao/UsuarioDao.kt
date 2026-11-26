@@ -18,7 +18,7 @@ interface UsuarioDao {
     @Query("SELECT * FROM usuario WHERE id_usuario = :id")
     suspend fun getUsuarioById(id: Int): UsuarioEntity?
 
-    @Query("SELECT * FROM usuario WHERE correo = :correo LIMIT 1")
+    @Query("SELECT * FROM usuario WHERE correo = :correo COLLATE NOCASE LIMIT 1")
     suspend fun getUsuarioByCorreo(correo: String): UsuarioEntity?
 
     @Query("SELECT * FROM usuario WHERE id_usuario = :id")
