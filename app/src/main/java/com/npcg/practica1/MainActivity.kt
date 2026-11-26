@@ -4,11 +4,13 @@ import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import dagger.hilt.android.AndroidEntryPoint
 import androidx.compose.runtime.*
 import com.npcg.practica1.ui.screens.auth.LoginScreen
 import com.npcg.practica1.ui.screens.home.HomeScreen
 import com.npcg.practica1.ui.theme.WelliTheme
 
+@AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

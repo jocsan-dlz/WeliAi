@@ -6,14 +6,14 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface RecetaDao {
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    @Insert(onConflict = OnConflictStrategy.ABORT)
     suspend fun insertReceta(receta: RecetaEntity): Long
 
     @Update
-    suspend fun updateReceta(receta: RecetaEntity)
+    suspend fun updateReceta(receta: RecetaEntity): Int
 
     @Delete
-    suspend fun deleteReceta(receta: RecetaEntity)
+    suspend fun deleteReceta(receta: RecetaEntity): Int
 
     @Query("SELECT * FROM receta ORDER BY fecha_creacion DESC")
     fun getAllRecetasFlow(): Flow<List<RecetaEntity>>

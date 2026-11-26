@@ -12,17 +12,19 @@ import androidx.room.PrimaryKey
             entity = RecetaEntity::class,
             parentColumns = ["id_receta"],
             childColumns = ["id_receta"],
-            onDelete = ForeignKey.CASCADE
+            onDelete = ForeignKey.CASCADE,
+            onUpdate = ForeignKey.NO_ACTION
         ),
         ForeignKey(
             entity = IngredienteEntity::class,
             parentColumns = ["id_ingrediente"],
             childColumns = ["id_ingrediente"],
-            onDelete = ForeignKey.CASCADE
+            onDelete = ForeignKey.CASCADE,
+            onUpdate = ForeignKey.NO_ACTION
         )
     ],
     indices = [
-        Index(value = ["id_receta"]),
+        Index(value = ["id_receta", "id_ingrediente"], unique = true),
         Index(value = ["id_ingrediente"])
     ]
 )

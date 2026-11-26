@@ -6,14 +6,14 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface IngredienteDao {
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    @Insert(onConflict = OnConflictStrategy.ABORT)
     suspend fun insertIngrediente(ingrediente: IngredienteEntity): Long
 
     @Update
-    suspend fun updateIngrediente(ingrediente: IngredienteEntity)
+    suspend fun updateIngrediente(ingrediente: IngredienteEntity): Int
 
     @Delete
-    suspend fun deleteIngrediente(ingrediente: IngredienteEntity)
+    suspend fun deleteIngrediente(ingrediente: IngredienteEntity): Int
 
     @Query("SELECT * FROM ingrediente ORDER BY nombre ASC")
     fun getAllIngredientesFlow(): Flow<List<IngredienteEntity>>

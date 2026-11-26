@@ -1,24 +1,27 @@
 package com.npcg.practica1.ui.screens.auth
 
-import android.content.Context
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.npcg.practica1.R
-import com.npcg.practica1.data.local.WelliDatabaseHelper
+import com.npcg.practica1.domain.repository.UsuarioRepository
+import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.launch
+import javax.inject.Inject
 
-class LoginViewModel : ViewModel() {
-
-    var email by mutableStateOf("jodiluz777@gmail.com")
+@HiltViewModel
+class LoginViewModel @Inject constructor(
+    private val usuarioRepository: UsuarioRepository
+) : ViewModel() {
+    var email by mutableStateOf("")
         private set
-
-    var password by mutableStateOf("0203004yo//")
+    var password by mutableStateOf("")
         private set
-
     var isPasswordVisible by mutableStateOf(false)
         private set
-
     var errorMessageResId by mutableStateOf<Int?>(null)
         private set
 
@@ -36,26 +39,27 @@ class LoginViewModel : ViewModel() {
         isPasswordVisible = !isPasswordVisible
     }
 
-    fun validateAndLogin(context: Context, onSuccess: () -> Unit) {
+    fun validateAndLogin(onSuccess: () -> Unit) {
         when {
-            email.isBlank() || password.isBlank() -> {
-                errorMessageResId = R.string.error_empty_fields
-            }
-            !android.util.Patterns.EMAIL_ADDRESS.matcher(email.trim()).matches() -> {
+            email.isBlank() || password.isBlank() -> errorMessageResId = R.string.error_empty_fields
+            !android.util.Patterns.EMAIL_ADDRESS.matcher(email.trim()).matches() ->
                 errorMessageResId = R.string.error_invalid_email
-            }
-            else -> {
-                val dbHelper = WelliDatabaseHelper(context)
-                dbHelper.writableDatabase
-
-                if (dbHelper.validateUser(email, password)) {
-                    errorMessageResId = null
-                    onSuccess()
-                } else {
-                    // Si ingresó otros datos válidos, también permite el acceso para pruebas
-                    errorMessageResId = null
-                    onSuccess()
+            else -> viewModelScope.launch {
+                val result = try {
+                    usuarioRepository.iniciarSesion(email.trim(), password)
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    Result.failure(e)
                 }
+                result.fold(
+                    onSuccess = {
+                        password = ""
+                        errorMessageResId = null
+                        onSuccess()
+                    },
+                    onFailure = { errorMessageResId = R.string.error_auth_failed }
+                )
             }
         }
     }

@@ -5,32 +5,35 @@ import com.npcg.practica1.data.mapper.toDomain
 import com.npcg.practica1.data.mapper.toEntity
 import com.npcg.practica1.domain.model.Usuario
 import com.npcg.practica1.domain.repository.UsuarioRepository
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import java.security.MessageDigest
 import java.security.SecureRandom
 import javax.crypto.SecretKeyFactory
 import javax.crypto.spec.PBEKeySpec
+import javax.inject.Inject
 
-/**
- * Implementación del repositorio de Usuarios utilizando Room DAO y PBKDF2-HMAC-SHA256 con Salt.
- */
-class UsuarioRepositoryImpl(
+/** Repositorio de usuarios; el hash solo se manipula en la capa de datos. */
+class UsuarioRepositoryImpl @Inject constructor(
     private val usuarioDao: UsuarioDao
 ) : UsuarioRepository {
 
     override suspend fun registrarUsuario(usuario: Usuario, contrasenaPlana: String): Result<Usuario> {
         return try {
-            val exist = usuarioDao.getUsuarioByCorreo(usuario.correo)
-            if (exist != null) {
+            require(contrasenaPlana.length >= MIN_PASSWORD_LENGTH) {
+                "La contraseña debe tener al menos $MIN_PASSWORD_LENGTH caracteres"
+            }
+            if (usuarioDao.getUsuarioByCorreo(usuario.correo.trim()) != null) {
                 return Result.failure(IllegalArgumentException("El correo electrónico ya está registrado"))
             }
             val hashed = hashPassword(contrasenaPlana)
-            val entity = usuario.toEntity(contrasenaHash = hashed)
-            val id = usuarioDao.insertUsuario(entity)
-            val created = usuarioDao.getUsuarioById(id.toInt())?.toDomain()
-                ?: return Result.failure(IllegalStateException("Error al consultar el usuario recién creado"))
-            Result.success(created)
+            val id = usuarioDao.insertUsuario(usuario.copy(correo = usuario.correo.trim()).toEntity(hashed))
+            val created = usuarioDao.getUsuarioById(id.toInt())
+                ?: return Result.failure(IllegalStateException("No se pudo consultar el usuario creado"))
+            Result.success(created.toDomain())
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Result.failure(e)
         }
@@ -38,61 +41,55 @@ class UsuarioRepositoryImpl(
 
     override suspend fun iniciarSesion(correo: String, contrasenaPlana: String): Result<Usuario> {
         return try {
-            val userEntity = usuarioDao.getUsuarioByCorreo(correo.trim())
+            val entity = usuarioDao.getUsuarioByCorreo(correo.trim())
                 ?: return Result.failure(IllegalArgumentException("Usuario o contraseña incorrectos"))
-
-            if (!userEntity.estado) {
-                return Result.failure(IllegalStateException("La cuenta de usuario se encuentra inactiva"))
+            if (!entity.estado || !verifyPassword(contrasenaPlana, entity.contrasena_hash)) {
+                return Result.failure(IllegalArgumentException("Usuario o contraseña incorrectos"))
             }
-
-            if (verifyPassword(contrasenaPlana, userEntity.contrasena_hash)) {
-                Result.success(userEntity.toDomain())
-            } else {
-                Result.failure(IllegalArgumentException("Usuario o contraseña incorrectos"))
-            }
+            Result.success(entity.toDomain())
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Result.failure(e)
         }
     }
 
-    override suspend fun obtenerUsuarioPorId(id: Int): Result<Usuario?> {
-        return try {
-            val user = usuarioDao.getUsuarioById(id)?.toDomain()
-            Result.success(user)
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
+    override suspend fun obtenerUsuarioPorId(id: Int): Result<Usuario?> = try {
+        Result.success(usuarioDao.getUsuarioById(id)?.toDomain())
+    } catch (e: CancellationException) {
+        throw e
+    } catch (e: Exception) {
+        Result.failure(e)
     }
 
-    override suspend fun obtenerUsuarioPorCorreo(correo: String): Result<Usuario?> {
-        return try {
-            val user = usuarioDao.getUsuarioByCorreo(correo.trim())?.toDomain()
-            Result.success(user)
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
+    override suspend fun obtenerUsuarioPorCorreo(correo: String): Result<Usuario?> = try {
+        Result.success(usuarioDao.getUsuarioByCorreo(correo.trim())?.toDomain())
+    } catch (e: CancellationException) {
+        throw e
+    } catch (e: Exception) {
+        Result.failure(e)
     }
 
-    override fun obtenerTodosLosUsuarios(): Flow<List<Usuario>> {
-        return usuarioDao.getAllUsuarios().map { list ->
-            list.map { it.toDomain() }
-        }
-    }
+    override fun obtenerTodosLosUsuarios(): Flow<List<Usuario>> =
+        usuarioDao.getAllUsuarios().map { rows -> rows.map { it.toDomain() } }
 
     override suspend fun actualizarUsuario(usuario: Usuario, nuevaContrasenaPlana: String?): Result<Unit> {
         return try {
-            val currentEntity = usuarioDao.getUsuarioById(usuario.idUsuario)
-                ?: return Result.failure(IllegalArgumentException("El usuario no existe"))
-
-            val hashToUse = if (!nuevaContrasenaPlana.isNullOrBlank()) {
-                hashPassword(nuevaContrasenaPlana)
-            } else {
-                currentEntity.contrasena_hash
+            val current = usuarioDao.getUsuarioById(usuario.idUsuario)
+                ?: return Result.failure(NoSuchElementException("El usuario no existe"))
+            val hash = when {
+                nuevaContrasenaPlana == null -> current.contrasena_hash
+                nuevaContrasenaPlana.length >= MIN_PASSWORD_LENGTH -> hashPassword(nuevaContrasenaPlana)
+                else -> return Result.failure(IllegalArgumentException(
+                    "La contraseña debe tener al menos $MIN_PASSWORD_LENGTH caracteres"
+                ))
             }
-
-            val updatedEntity = usuario.toEntity(contrasenaHash = hashToUse)
-            usuarioDao.updateUsuario(updatedEntity)
+            if (usuarioDao.updateUsuario(usuario.toEntity(hash)) == 0) {
+                return Result.failure(NoSuchElementException("El usuario no existe"))
+            }
             Result.success(Unit)
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Result.failure(e)
         }
@@ -101,9 +98,13 @@ class UsuarioRepositoryImpl(
     override suspend fun eliminarUsuario(usuario: Usuario): Result<Unit> {
         return try {
             val entity = usuarioDao.getUsuarioById(usuario.idUsuario)
-                ?: return Result.failure(IllegalArgumentException("El usuario no existe"))
-            usuarioDao.deleteUsuario(entity)
+                ?: return Result.failure(NoSuchElementException("El usuario no existe"))
+            if (usuarioDao.deleteUsuario(entity) == 0) {
+                return Result.failure(NoSuchElementException("El usuario no existe"))
+            }
             Result.success(Unit)
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Result.failure(e)
         }
@@ -111,59 +112,67 @@ class UsuarioRepositoryImpl(
 
     companion object {
         private const val ALGORITHM = "PBKDF2WithHmacSHA256"
-        private const val ITERATIONS = 20000
-        private const val KEY_LENGTH = 256
-        private const val SALT_SIZE = 16
+        private const val ITERATIONS = 600_000
+        private const val MIN_ACCEPTED_ITERATIONS = 100_000
+        private const val MAX_ACCEPTED_ITERATIONS = 1_000_000
+        private const val KEY_LENGTH_BITS = 256
+        private const val HASH_SIZE_BYTES = KEY_LENGTH_BITS / 8
+        private const val SALT_SIZE_BYTES = 16
+        private const val MIN_PASSWORD_LENGTH = 8
+        private val HEX_PATTERN = Regex("^[0-9a-fA-F]+$")
 
-        fun hashPassword(password: String): String {
-            val random = SecureRandom()
-            val salt = ByteArray(SALT_SIZE)
-            random.nextBytes(salt)
-
-            val spec = PBEKeySpec(password.toCharArray(), salt, ITERATIONS, KEY_LENGTH)
-            val factory = SecretKeyFactory.getInstance(ALGORITHM)
-            val hash = factory.generateSecret(spec).encoded
-            spec.clearPassword()
-
-            val saltHex = salt.joinToString("") { "%02x".format(it) }
-            val hashHex = hash.joinToString("") { "%02x".format(it) }
-
-            return "pbkdf2:$ITERATIONS:$saltHex:$hashHex"
+        internal fun hashPassword(password: String): String {
+            val salt = ByteArray(SALT_SIZE_BYTES)
+            val passwordChars = password.toCharArray()
+            SecureRandom().nextBytes(salt)
+            val keySpec = PBEKeySpec(passwordChars, salt, ITERATIONS, KEY_LENGTH_BITS)
+            return try {
+                val derivedKey = SecretKeyFactory.getInstance(ALGORITHM).generateSecret(keySpec).encoded
+                try {
+                    "pbkdf2:$ITERATIONS:${salt.toHex()}:${derivedKey.toHex()}"
+                } finally {
+                    derivedKey.fill(0)
+                }
+            } finally {
+                keySpec.clearPassword()
+                passwordChars.fill('\u0000')
+                salt.fill(0)
+            }
         }
 
-        fun verifyPassword(password: String, storedValue: String): Boolean {
-            if (!storedValue.startsWith("pbkdf2:")) {
-                // Se rechaza completamente cualquier intento de comparación en texto plano o hash legado no seguro
-                return false
-            }
-
-            val parts = storedValue.split(":")
-            if (parts.size != 4) return false
-
+        internal fun verifyPassword(password: String, storedValue: String): Boolean {
+            val parts = storedValue.split(':')
+            if (parts.size != 4 || parts[0] != "pbkdf2") return false
             val iterations = parts[1].toIntOrNull() ?: return false
-            if (iterations < 1000 || iterations > 100000) return false
-
+            if (iterations !in MIN_ACCEPTED_ITERATIONS..MAX_ACCEPTED_ITERATIONS) return false
             val saltHex = parts[2]
-            val storedHashHex = parts[3]
+            val hashHex = parts[3]
+            if (saltHex.length != SALT_SIZE_BYTES * 2 || hashHex.length != HASH_SIZE_BYTES * 2) return false
+            if (!HEX_PATTERN.matches(saltHex) || !HEX_PATTERN.matches(hashHex)) return false
 
-            val salt = hexToBytes(saltHex)
-            val spec = PBEKeySpec(password.toCharArray(), salt, iterations, KEY_LENGTH)
-            val factory = SecretKeyFactory.getInstance(ALGORITHM)
-            val computedHash = factory.generateSecret(spec).encoded
-            spec.clearPassword()
-
-            val computedHashHex = computedHash.joinToString("") { "%02x".format(it) }
-
-            return MessageDigest.isEqual(computedHashHex.toByteArray(), storedHashHex.toByteArray())
-        }
-
-        private fun hexToBytes(hex: String): ByteArray {
-            val result = ByteArray(hex.length / 2)
-            for (i in result.indices) {
-                val index = i * 2
-                result[i] = hex.substring(index, index + 2).toInt(16).toByte()
+            val salt = saltHex.hexToBytes()
+            val expectedKey = hashHex.hexToBytes()
+            val passwordChars = password.toCharArray()
+            val keySpec = PBEKeySpec(passwordChars, salt, iterations, KEY_LENGTH_BITS)
+            return try {
+                val actualKey = SecretKeyFactory.getInstance(ALGORITHM).generateSecret(keySpec).encoded
+                try {
+                    MessageDigest.isEqual(actualKey, expectedKey)
+                } finally {
+                    actualKey.fill(0)
+                }
+            } finally {
+                keySpec.clearPassword()
+                passwordChars.fill('\u0000')
+                salt.fill(0)
+                expectedKey.fill(0)
             }
-            return result
         }
+
+        private fun String.hexToBytes(): ByteArray = ByteArray(length / 2) { index ->
+            substring(index * 2, index * 2 + 2).toInt(16).toByte()
+        }
+
+        private fun ByteArray.toHex(): String = joinToString("") { "%02x".format(it) }
     }
 }

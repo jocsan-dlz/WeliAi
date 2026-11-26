@@ -11,6 +11,7 @@
     <string name="btn_login">Iniciar sesión</string>
     <string name="btn_create_account">Crear cuenta</string>
     <string name="error_empty_fields">Por favor, completa todos los campos.</string>
+    <string name="error_auth_failed">No se pudo iniciar sesión. Verifica tus datos o restablece tu contraseña.</string>
     <string name="error_invalid_email">Ingresa un correo electrónico válido.</string>
     <string name="show_password">Mostrar contraseña</string>
     <string name="hide_password">Ocultar contraseña</string>

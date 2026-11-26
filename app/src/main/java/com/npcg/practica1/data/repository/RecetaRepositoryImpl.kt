@@ -7,11 +7,13 @@ import com.npcg.practica1.domain.model.Receta
 import com.npcg.practica1.domain.repository.RecetaRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.CancellationException
+import javax.inject.Inject
 
 /**
  * Implementación del repositorio de Recetas utilizando Room DAO y Mappers.
  */
-class RecetaRepositoryImpl(
+class RecetaRepositoryImpl @Inject constructor(
     private val recetaDao: RecetaDao
 ) : RecetaRepository {
 
@@ -19,6 +21,8 @@ class RecetaRepositoryImpl(
         return try {
             val id = recetaDao.insertReceta(receta.toEntity())
             Result.success(id)
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Result.failure(e)
         }
@@ -28,6 +32,8 @@ class RecetaRepositoryImpl(
         return try {
             val list = recetaDao.getAllRecetas().map { it.toDomain() }
             Result.success(list)
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Result.failure(e)
         }
@@ -43,6 +49,8 @@ class RecetaRepositoryImpl(
         return try {
             val list = recetaDao.getRecetasByUsuario(idUsuario).map { it.toDomain() }
             Result.success(list)
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Result.failure(e)
         }
@@ -58,6 +66,8 @@ class RecetaRepositoryImpl(
         return try {
             val receta = recetaDao.getRecetaById(id)?.toDomain()
             Result.success(receta)
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Result.failure(e)
         }
@@ -65,8 +75,12 @@ class RecetaRepositoryImpl(
 
     override suspend fun actualizarReceta(receta: Receta): Result<Unit> {
         return try {
-            recetaDao.updateReceta(receta.toEntity())
+            if (recetaDao.updateReceta(receta.toEntity()) == 0) {
+                return Result.failure(NoSuchElementException("La receta no existe"))
+            }
             Result.success(Unit)
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Result.failure(e)
         }
@@ -74,8 +88,12 @@ class RecetaRepositoryImpl(
 
     override suspend fun eliminarReceta(receta: Receta): Result<Unit> {
         return try {
-            recetaDao.deleteReceta(receta.toEntity())
+            if (recetaDao.deleteReceta(receta.toEntity()) == 0) {
+                return Result.failure(NoSuchElementException("La receta no existe"))
+            }
             Result.success(Unit)
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Result.failure(e)
         }

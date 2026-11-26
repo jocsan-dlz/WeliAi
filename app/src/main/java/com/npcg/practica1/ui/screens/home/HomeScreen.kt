@@ -18,7 +18,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.npcg.practica1.R
 import com.npcg.practica1.ui.components.WelliButton
 
@@ -30,7 +30,7 @@ fun HomeScreen(
     onFavoritesClick: () -> Unit,
     onProfileClick: () -> Unit,
     modifier: Modifier = Modifier,
-    viewModel: HomeViewModel = viewModel()
+    viewModel: HomeViewModel = hiltViewModel()
 ) {
     val scrollState = rememberScrollState()
 

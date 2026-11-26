@@ -12,7 +12,8 @@ import androidx.room.PrimaryKey
             entity = UsuarioEntity::class,
             parentColumns = ["id_usuario"],
             childColumns = ["id_usuario"],
-            onDelete = ForeignKey.CASCADE
+            onDelete = ForeignKey.CASCADE,
+            onUpdate = ForeignKey.NO_ACTION
         )
     ],
     indices = [

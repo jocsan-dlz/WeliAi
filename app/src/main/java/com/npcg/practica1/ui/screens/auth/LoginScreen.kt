@@ -13,7 +13,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -21,7 +20,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.npcg.practica1.R
 import com.npcg.practica1.ui.components.WelliButton
 import com.npcg.practica1.ui.components.WelliLogo
@@ -32,10 +31,9 @@ fun LoginScreen(
     onLoginSuccess: () -> Unit,
     onCreateAccountClick: () -> Unit,
     modifier: Modifier = Modifier,
-    viewModel: LoginViewModel = viewModel()
+    viewModel: LoginViewModel = hiltViewModel()
 ) {
     val scrollState = rememberScrollState()
-    val context = LocalContext.current
 
     Surface(
         modifier = modifier.fillMaxSize(),
@@ -160,7 +158,7 @@ fun LoginScreen(
                     WelliButton(
                         text = stringResource(id = R.string.btn_login),
                         onClick = {
-                            viewModel.validateAndLogin(context, onSuccess = onLoginSuccess)
+                            viewModel.validateAndLogin(onSuccess = onLoginSuccess)
                         }
                     )
 

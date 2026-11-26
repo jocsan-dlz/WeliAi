@@ -1,13 +1,13 @@
 package com.npcg.practica1.ui.screens.home
 
-import android.content.Context
 import androidx.annotation.StringRes
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
+import dagger.hilt.android.lifecycle.HiltViewModel
 import com.npcg.practica1.R
-import com.npcg.practica1.data.local.WelliDatabaseHelper
+import javax.inject.Inject
 
 enum class BudgetOption(@StringRes val titleRes: Int) {
     GRATIS(R.string.budget_free),
@@ -21,7 +21,8 @@ data class IngredientItem(
     @StringRes val qtyRes: Int
 )
 
-class HomeViewModel : ViewModel() {
+@HiltViewModel
+class HomeViewModel @Inject constructor() : ViewModel() {
 
     var userName by mutableStateOf("Jodiluz")
         private set
@@ -41,14 +42,6 @@ class HomeViewModel : ViewModel() {
         IngredientItem("3", R.string.ingredient_cheese, R.string.qty_cheese),
         IngredientItem("4", R.string.ingredient_onion, R.string.qty_onion)
     )
-
-    fun loadUserData(context: Context, userEmail: String = "jodiluz777@gmail.com") {
-        val db = WelliDatabaseHelper(context)
-        val usuario = db.getUsuarioByCorreo(userEmail)
-        if (usuario != null) {
-            userName = usuario.nombre
-        }
-    }
 
     fun onBudgetSelected(budget: BudgetOption) {
         selectedBudget = budget

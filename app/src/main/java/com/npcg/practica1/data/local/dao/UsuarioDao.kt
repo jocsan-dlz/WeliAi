@@ -6,14 +6,14 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface UsuarioDao {
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    @Insert(onConflict = OnConflictStrategy.ABORT)
     suspend fun insertUsuario(usuario: UsuarioEntity): Long
 
     @Update
-    suspend fun updateUsuario(usuario: UsuarioEntity)
+    suspend fun updateUsuario(usuario: UsuarioEntity): Int
 
     @Delete
-    suspend fun deleteUsuario(usuario: UsuarioEntity)
+    suspend fun deleteUsuario(usuario: UsuarioEntity): Int
 
     @Query("SELECT * FROM usuario WHERE id_usuario = :id")
     suspend fun getUsuarioById(id: Int): UsuarioEntity?

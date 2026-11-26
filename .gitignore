@@ -13,3 +13,25 @@
 .externalNativeBuild
 .cxx
 local.properties
+
+# Android Studio local configuration
+/.idea/
+
+# Environment files and local credentials
+.env
+.env.*
+secrets.properties
+credentials.properties
+keystore.properties
+google-services.json
+**/secrets/**
+**/credentials/**
+**/*service-account*.json
+
+# Signing keys and private certificates
+*.jks
+*.keystore
+*.p12
+*.pfx
+*.pem
+*.key
